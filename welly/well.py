@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import lasio
 import numpy as np
+import copy
 
 from . import utils
 from .fields import las_fields as LAS_FIELDS

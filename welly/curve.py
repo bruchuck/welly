@@ -76,11 +76,36 @@ class Curve(np.ndarray):
     #     else:
     #         return np.ndarray.__array_wrap__(self, obj)
 
+    def __reduce__(self):
+        # Get the parent's __reduce__ tuple
+        pickled_state = super(Curve, self).__reduce__()
+      
+        new_state = pickled_state[2] + (list(self.__dict__.values()),)
+        # Return a tuple that replaces the parent's __setstate__ tuple with our own
+        return (pickled_state[0], pickled_state[1], new_state)
+
+    def __setstate__(self, state):
+
+        self.start =  state[-1][0] 
+        self.step =  state[-1][1] 
+        self.mnemonic =  state[-1][2] 
+        self.units =  state[-1][3] 
+        self.run =  state[-1][4] 
+        self.null =  state[-1][5] 
+        self.service_company = state[-1][6] 
+        self.date =  state[-1][7] 
+        self.code =  state[-1][8] 
+        self.description = state[-1][9] 
+
+        # Call the parent's __setstate__ with the other tuple elements.
+        super(Curve, self).__setstate__(state[0:-1])
+
     def __copy__(self):
         cls = self.__class__
-        result = cls.__new__(cls)
+        result = cls.__new__(cls, self.data)
         result.__dict__.update(self.__dict__)
         return result
+
 
     def _repr_html_(self):
         """

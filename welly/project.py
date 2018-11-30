@@ -136,10 +136,51 @@ class Project(object):
             raise WellError("You need to provide an alias dict as well as requirement list.")
         if path is None:
             path = './*.las'
+
+        if(isinstance(path, list)):
+            files = enumerate(path)
+        else:
+            files = enumerate(glob.iglob(path))
+
         list_of_Wells = [Well.from_las(f, remap=remap, funcs=funcs, 
                                         data=data, req=req, alias=alias, encoding=encoding,
                                         printfname=printfname)
-                         for i, f in tqdm(enumerate(glob.iglob(path))) if i < max]
+                         for i, f in tqdm(files) if i < max]
+        return cls(list(filter(None, list_of_Wells)))
+
+        
+    @classmethod
+    def from_lasfiles(cls, path=None, remap=None, funcs=None, data=True, req=None, alias=None, max=None, encoding=None, 
+                 printfname=None):
+        """
+        Constructor. Essentially just wraps ``Well.from_las()``, but is more
+        convenient for most purposes.
+
+        Args:
+            path (str): The path of the LAS files, e.g. ``./*.las`` (the
+                default). It will attempt to load everything it finds, so
+                make sure it only leads to LAS files.
+            remap (dict): Optional. A dict of 'old': 'new' LAS field names.
+            funcs (dict): Optional. A dict of 'las field': function() for
+                implementing a transform before loading. Can be a lambda.
+            data (bool): Whether to load curves or not.
+            req (list): A list of alias names, giving all required curves. If
+                not all of the aliases are present, the well is not loaded.
+            alias (dict): The alias dict, e.g. ``alias = {'gamma': ['GR', 'GR1'], 'density': ['RHOZ', 'RHOB'], 'pants': ['PANTS']}``
+
+        Returns:
+            project. The project object.
+        """
+        if max is None:
+            max = np.inf
+        if (req is not None) and (alias is None):
+            raise WellError("You need to provide an alias dict as well as requirement list.")
+        if path is None:
+            path = './*.las'
+        list_of_Wells = [Well.from_las(f, remap=remap, funcs=funcs, 
+                                        data=data, req=req, alias=alias, encoding=encoding,
+                                        printfname=printfname)
+                         for i, f in tqdm(enumerate(path)) if i < max]
         return cls(list(filter(None, list_of_Wells)))
 
     def add_canstrat_striplogs(self,
@@ -591,15 +632,15 @@ class Project(object):
             if y_key is None:
                 continue
 
-            y_key = w.get_mnemonic(y_key, alias=alias)
+            _y_key = w.get_mnemonic(y_key, alias=alias)
 
-            if y_key is None:
+            if _y_key is None:
                 continue
 
             try:
-                _y = w.data[y_key].to_basis(basis=z)
+                _y = w.data[_y_key].to_basis(basis=z)
             except:
-                _y = w.data[y_key].to_log(basis=z,
+                _y = w.data[_y_key].to_log(basis=z,
                                           legend=legend,
                                           match_only=match_only,
                                           field=field,
@@ -612,7 +653,7 @@ class Project(object):
 
         # Get rid of the 'seed'.
         X = X[1:]
-        if y_key is None:
+        if _y_key is None:
             y = None
         else:
             y = y[1:]
